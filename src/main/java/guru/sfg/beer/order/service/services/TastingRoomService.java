@@ -11,10 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -23,7 +20,7 @@ public class TastingRoomService {
     private final CustomerRepository customerRepository;
     private final BeerOrderService beerOrderService;
     private final BeerOrderRepository beerOrderRepository;
-    private final List<String> beerUpcs = new ArrayList<>(3);
+    private final List<Long> beerUpcs = new ArrayList<>(3);
 
     public TastingRoomService(CustomerRepository customerRepository, BeerOrderService beerOrderService,
                               BeerOrderRepository beerOrderRepository) {
@@ -50,27 +47,23 @@ public class TastingRoomService {
     }
 
     private void doPlaceOrder(Customer customer) {
-        String beerToOrder = getRandomBeerUpc();
+        var beerToOrder = getRandomBeerUpc();
 
         BeerOrderLineDto beerOrderLine = BeerOrderLineDto.builder()
                 .upc(beerToOrder)
                 .orderQuantity(new Random().nextInt(6)) //todo externalize value to property
                 .build();
 
-        List<BeerOrderLineDto> beerOrderLineSet = new ArrayList<>();
-        beerOrderLineSet.add(beerOrderLine);
-
         BeerOrderDto beerOrder = BeerOrderDto.builder()
                 .customerId(customer.getId())
                 .customerRef(UUID.randomUUID().toString())
-                .beerOrderLines(beerOrderLineSet)
+                .beerOrderLines(Collections.singletonList(beerOrderLine))
                 .build();
 
-        BeerOrderDto savedOrder = beerOrderService.placeOrder(customer.getId(), beerOrder);
-
+        beerOrderService.placeOrder(customer.getId(), beerOrder);
     }
 
-    private String getRandomBeerUpc() {
+    private Long getRandomBeerUpc() {
         return beerUpcs.get(new Random().nextInt(beerUpcs.size()));
     }
 }
